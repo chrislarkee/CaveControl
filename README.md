@@ -9,13 +9,13 @@
  
  Special Thanks to [jmusarra](https://github.com/jmusarra), whose [Pyjector](https://github.com/chrislarkee/Pyjector) was useful for emulating the projectors while working from home.
  
- Written by Chris Larkee, 4/29/21.
+ Written by Chris Larkee, 5/7/21.
 
 ## Instructions
 
 ### For the command line:
-- Type "python christie.py" to see a list of available commands.
-- Type "python christie.py on" , for example, to turn on all 10 projectors.
+- Type "python christie.py" to see a list of available commands for the projector. For example, "python christie.py on" , will turn on all 10 projectors.
+- Type "python marantz.py" to see a list of available commands for the audio system.
 
 ```
 $ python christie.py
