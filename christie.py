@@ -60,6 +60,33 @@ def transmitThread(id, command):
     except socket.timeout:
         statusreport += ip + ": timed out.\n"
     s.close()
+    
+def startup():
+    status = {
+        "power": False,
+        "shutter": False
+    }
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(2.0)
+    try:
+        s.connect("172.22.1.101", 3002)
+    except:
+        print("No Connection to projectors.")
+        return status 
+    #power
+    s.send("(#PWR?)".encode())
+    response = s.recv(1024).decode()
+    if "ON" in response:
+        status["power"] = True
+
+    #shutters
+    s.send("(#SHU?)".encode())
+    response = s.recv(1024).decode()
+    if "OPEN" in response:
+        status["shutter"] = True
+    
+    s.close
+    return status   
 
 def printHelp():
     print("Valid Commands:",\

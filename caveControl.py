@@ -2,8 +2,8 @@
 
 import tkinter as tk
 from tkinter import ttk
-from christie import transmit as projectorTransmit
-from marantz import transmit as audioTransmit
+import christie as projectorControl
+import marantz as audioControl
 
 class App(tk.Frame):
     def __init__(self, master=None):
@@ -14,18 +14,18 @@ class App(tk.Frame):
 
         s = ttk.Style()
         s.theme_use('vista')
-        s.configure('Heading.TLabel', font=("TkDefaultFont", 16, "bold"))
+        s.configure('header.TLabel', font=("TkDefaultFont", 16, "bold"))
+        s.configure('TLabelframe.Label', font=("TkDefaultFont", 10, "bold"))
     
     def create_widgets(self):
         #header
         header = tk.Frame(root)
-        ttk.Label(header, text='Marquette Visualization Lab Control', style='Heading.TLabel').pack()
-        ttk.Label(header, text='Select a command').pack()
-        #ttk.Separator(header).pack(expand=True, fill='x', pady=5)
+        ttk.Label(header, text='Marquette Visualization Lab Control', style='header.TLabel').pack()
+        #ttk.Label(header, text='Select a command').pack()        
         header.pack(expand=False, fill='x', pady=10)
 
         #frame 1, projector
-        frame1 = ttk.Labelframe(root, text='Projector Controls')
+        frame1 = ttk.Labelframe(root, text='Projector Controls', labelanchor='n')
         ttk.Label(frame1, text='Power:').grid(row=0, column=0)
         ttk.Radiobutton(frame1, text='On', variable=b_ppower, value="p_on").grid(row=0, column=1, sticky="W")
         ttk.Radiobutton(frame1, text='Off', variable=b_ppower, value="p_off").grid(row=0, column=2, sticky="W")
@@ -52,7 +52,7 @@ class App(tk.Frame):
         frame1.pack(expand=False, fill='x', padx=10, pady=10)
         
         #frame 2, audio
-        frame2 = ttk.Labelframe(root, text='Audio Controls')
+        frame2 = ttk.Labelframe(root, text='Audio Controls', labelanchor='n')
         
         ttk.Label(frame2, text='Power:').grid(row=0, column=0)
         ttk.Radiobutton(frame2, text='On', variable=b_apower, value="a_PWON").grid(row=0, column=1, sticky="W")
@@ -71,8 +71,8 @@ class App(tk.Frame):
         frame2.rowconfigure(1, pad=15)
         frame2.pack(expand=False, fill='x', padx=10, pady=10)
 
-        #footer
-        footer = ttk.Labelframe(text='Info')
+        #footer, info
+        footer = ttk.Labelframe(text='Info', labelanchor='n')
         ttk.Label(footer, textvariable=infoarea).pack(pady=5)
         footer.pack(expand=True, fill='both', padx=10, pady=10)
 
@@ -80,43 +80,61 @@ def onclick(s):
     infoarea.set("Please wait...");
     app.update()
     if s[0] == 'p':
-        infoarea.set(projectorTransmit(s[2:]))
+        infoarea.set(projectorControl.transmit(s[2:]))
         #infoarea.set(s[2:])
     elif s == "a_reset":
-        infoarea.set(audioTransmit(s[2:]))
+        infoarea.set(audioControl.transmit(s[2:]))
         infoarea.set(s[2:])
         b_avolume.set(60)
     elif s[0] == 'a':
-        infoarea.set(audioTransmit(s[2:]))
+        infoarea.set(audioControl.transmit(s[2:]))
         #infoarea.set(s[2:])
         
 def volumeChange(s):
     infoarea.set("Please wait...");
     app.update()
     command = "MV" + str(b_avolume.get() * 10).zfill(3)
-    infoarea.set(audioTransmit(command))
+    infoarea.set(audioControl.transmit(command))
     #infoarea.set(command)
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(master=root)
-    
-    #state variables & callbacks
+
+    #TK state variables
+    #projector
+    projectorStatus = projectorControl.startup()
     b_ppower = tk.StringVar()
     b_shutters = tk.StringVar()
+    if projectorStatus["power"]:
+        b_ppower.set("p_on")
+    else:
+        b_ppower.set("p_off")
+    if projectorStatus["shutter"]:
+        b_shutters.set("p_open")
+    else:
+        b_shutters.set("p_close")
+    
     b_3d = tk.StringVar()
     b_floor = tk.StringVar()
+
+    #audio
+    audioStatus = audioControl.startup()
     b_apower = tk.StringVar()
-    b_avolume = tk.IntVar(value=60)
-    b_ppower.trace_add('write', lambda *args: command.set(b_ppower.get()))
-    b_apower.trace_add('write', lambda *args: command.set(b_apower.get()))
-    b_shutters.trace_add('write', lambda *args: command.set(b_shutters.get()))
-    b_3d.trace_add('write', lambda *args: command.set(b_3d.get()))
-    b_floor.trace_add('write', lambda *args: command.set(b_floor.get()))    
-    
+    b_avolume = tk.IntVar(value=40)
+    if audioStatus["power"]:
+        b_apower.set("a_PWON")
+    else:
+        b_apower.set("a_PWSTANDBY")
+        
     infoarea = tk.StringVar(value="Ready.")
-    command = tk.StringVar()
-    command.trace_add('write', lambda *args: onclick(command.get()))
+
+    #callbacks
+    b_ppower.trace_add('write', lambda *args: onclick(b_ppower.get()))
+    b_apower.trace_add('write', lambda *args: onclick(b_apower.get()))
+    b_shutters.trace_add('write', lambda *args: onclick(b_shutters.get()))
+    b_3d.trace_add('write', lambda *args: onclick(b_3d.get()))
+    b_floor.trace_add('write', lambda *args: onclick(b_floor.get()))    
     
     #keyboard shortcuts
     root.bind('<Escape>', lambda x: root.destroy())

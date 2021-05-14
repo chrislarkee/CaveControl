@@ -4,25 +4,52 @@ import telnetlib
 from sys import exit
 from sys import argv
 
+MARANTZ_IP = '172.22.1.50'
+
 def transmit(request):
     #translate friendly commands into the API's language
     if request == "reset":
-        command = "MV600\r".encode('ascii')
+        command = "MV400\r".encode()
     elif request == "ping":
-        command = "PW?\r".encode('ascii')
+        command = "PW?\r".encode()
     else:
-        command = (request.upper()).encode('ascii')
+        command = (request.upper() + "\r").encode()
     
-    statusreport = "Command: " + request + "\n"
+    statusreport = "Transmitting: " + request + "\n"
     tn = telnetlib.Telnet()
     try:
-        tn.open('172.22.1.50', 23, 5)
+        tn.open(MARANTZ_IP, 23, 5)
         tn.write(command)
-        statusreport += tn.read_very_eager().decode('ascii')
     except:
-        statusreport += "error!\n"
+        statusreport += "Unable to open connection.\n"
+    try:
+        statusreport += "Response: " + tn.read_until(b'\r', timeout=5).decode()
+    except:
+        statusreport += "No response.\n"
     tn.close()
     return statusreport
+
+def startup():
+    status = {
+        "power": False,
+        "volume": 400
+    }
+    tn = telnetlib.Telnet()
+    try:
+        tn.open(MARANTZ_IP, 23, 2)
+    except:
+        print("No Connection to audio receiver.")
+        return status
+    #power
+    tn.write("PW?\r".encode())
+    response = tn.read_until(b'\r', timeout=5).decode()
+    if "ON" in response:
+        status["power"] = True
+    
+    #startup volume
+    tn.write("MV400\r".encode())
+    tn.close()   
+    return status    
 
 def printHelp():
     print("Valid Commands:",\
