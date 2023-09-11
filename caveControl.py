@@ -39,7 +39,7 @@ class App(tk.Frame):
         ttk.Radiobutton(frame1, text='Disabled', variable=b_floor, value="p_floorOff").grid(row=2, column=2, sticky="W")
         
         ttk.Label(frame1, text='Stereo mode:').grid(row=3, column=0)
-        ttk.Radiobutton(frame1, text='Frame Doubled', variable=b_3d, value="p_3d").grid(row=3, column=1, sticky="W")
+        ttk.Radiobutton(frame1, text='Top/Bottom', variable=b_3d, value="p_3d").grid(row=3, column=1, sticky="W")
         ttk.Radiobutton(frame1, text='Disabled', variable=b_3d, value="p_2d").grid(row=3, column=2, sticky="W")
         
         frame1.columnconfigure(0, pad=0, weight=2)
