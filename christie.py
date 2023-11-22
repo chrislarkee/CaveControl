@@ -11,9 +11,9 @@ statusreport = ""
 def transmit(request):
     #translate friendly commands into the API's language
     if request == "on":
-        command = "($PWR1)"
+        command = "(#PWR1)"
     elif request == "off":
-        command = "($PWR0)"
+        command = "(#PWR0)"
     elif request == "open":
         command = "(#SHU0)"
     elif request == "close":
@@ -21,7 +21,7 @@ def transmit(request):
     elif request == "3d":
         command = ""
     elif request == "3d_old":
-        command = "($TDM+MAIN2)"
+        command = "(#TDM+MAIN2)"
     elif request == "2d":
         command = "(#TDM+MAIN0)"
     elif request == "floorOn":
@@ -40,10 +40,10 @@ def transmit(request):
     statusreport = ""
     if request == "3d":
         for projector in range(1, 9):
-            thr = Thread(target=transmitThread, args=(projector, "(#TDM+MAIN5)"))
+            thr = Thread(target=transmitThread, args=(projector, "($TDM+MAIN5)"))
             thr.start()
         for projector in range(9, 11):
-            thr = Thread(target=transmitThread, args=(projector, "(#TDM+MAIN0)"))
+            thr = Thread(target=transmitThread, args=(projector, "($TDM+MAIN0)"))
             thr.start()
     else:
         for projector in range(1, 11):
@@ -59,7 +59,7 @@ def transmitThread(id, command):
     #your lab's IPs will vary
     ip = "172.22.1.1" + str(id).zfill(2)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(8.0)
+    s.settimeout(5.0)
     global statusreport
     try:
         s.connect((ip, 3002))
