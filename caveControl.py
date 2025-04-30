@@ -3,6 +3,7 @@
 #GUI
 import wx
 from data.layout import maingui
+from datetime import datetime
 
 #transmissions
 from threading import Thread, active_count
@@ -16,8 +17,8 @@ class Transmit():
         self.ips = ["172.22.1." + str(i) for i in range(101,111)]
         
         #audio
-        self.audioIP = "172.22.1.50"
-
+        self.audioIP = "172.22.1.50"        
+        
     #dispatch to all projectors
     def allProjectors(self, command):
         for i in range(len(self.ips)):
@@ -67,14 +68,24 @@ class Transmit():
 
     
 class gui(maingui): 
-    def __init__(self,parent):
+    def __init__(self, parent):
         #initialize widgets
-        maingui.__init__(self,parent)
-        
-        #initialize grid statuses
+        maingui.__init__(self, parent)
         transmit.callback = self
+        
+        #initialize grid statuses        
         transmit.allProjectors("PWR?")
-        transmit.audio("PW?")        
+        transmit.audio("PW?")
+        
+        #set up the autoshutdown timer
+        self.t = wx.Timer()
+        self.t.Bind(wx.EVT_TIMER, self.autoShutdown)
+        self.t.Start(60000)
+
+    #click on the title to query the devices
+    def refreshStatus( self, event ):  
+        transmit.allProjectors("PWR?")
+        transmit.audio("PW?")   
 
     def togglePower(self, event):
         if event.IsChecked():
@@ -110,8 +121,8 @@ class gui(maingui):
 
     def toggleStereo(self, event):
         if event.IsChecked():
-            event.GetEventObject().SetLabel("ON")
-            transmit.allProjectors("TDM+MAIN5")            
+            event.GetEventObject().SetLabel("ON")            
+            transmit.allProjectors("TDM+MAIN5")
         else:
             event.GetEventObject().SetLabel("OFF")
             transmit.allProjectors("TDM+MAIN0")
@@ -127,12 +138,39 @@ class gui(maingui):
     def updateVolume(self, event):
         volume = "MV" + str(event.GetEventObject().GetValue()).zfill(2)
         transmit.audio(volume)
+        
+    def autoShutdown(self, event):
+        #is it 6pm?
+        dt = datetime.now().strftime("%H%M")
+        if dt != "1800":
+            return
+        
+        #start another timer     
+        self.shutdownTimer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.autoShutdownTimeout, self.shutdownTimer)
+        self.shutdownTimer.StartOnce(10000)  # 10 seconds        
+        
+        #give a warning to the user
+        self.shutdownDlg = wx.GenericMessageDialog(self, "The projectors will be automatically shutdown in 10 seconds...",'Auto-Shutdown', wx.OK | wx.ICON_WARNING)
+        self.shutdownDlg.SetOKLabel("Cancel Shutdown")
+
+        result = self.shutdownDlg.ShowModal()  
+        self.shutdownTimer.Stop()     
+            
+    def autoShutdownTimeout(self, event):
+        if self.shutdownDlg:
+            self.shutdownDlg.EndModal(wx.ID_CANCEL)
+            self.c_ppower.SetLabel("OFF")
+            transmit.allProjectors("PWR0")
+            self.c_audio.SetLabel("OFF")
+            transmit.audio("PWSTANDBY")
 
     #the threads call this when they're done
     def gridUpdate(self, id, message):
         self.grid.SetCellValue(row=id, col=0, s=message)
         
     def quit(self, event):
+        self.t.Stop()
         transmit.tn.close()
         wx.Exit()
         
@@ -143,3 +181,4 @@ if __name__ == '__main__':
     frame = gui(None)
     frame.Show()
     app.MainLoop()
+   

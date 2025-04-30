@@ -1,11 +1,4 @@
-altgraph==0.17.4
-packaging==23.2
-pefile==2023.2.7
-Pillow==10.1.0
-pyinstaller==6.2.0
-pyinstaller-hooks-contrib==2023.10
-pywin32-ctypes==0.2.2
-setuptools==69.0.2
-six==1.16.0
-telnetlib3==2.0.4
-wxPython==4.2.1
+Nuitka==2.7
+ordered-set==4.1.0
+wxPython==4.2.3
+zstandard==0.23.0
