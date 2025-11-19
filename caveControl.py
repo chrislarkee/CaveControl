@@ -69,9 +69,8 @@ class Transmit():
     
 class gui(maingui): 
     def __init__(self, parent):
-        #initialize widgets
-        maingui.__init__(self, parent)
-        transmit.callback = self
+        maingui.__init__(self, parent)      #initialize widgets
+        transmit.callback = self            #connection to the GUI
         
         #initialize grid statuses        
         transmit.allProjectors("PWR?")
@@ -82,7 +81,6 @@ class gui(maingui):
         self.t.Bind(wx.EVT_TIMER, self.autoShutdown)
         self.t.Start(60000)
 
-    #click on the title to query the devices
     def refreshStatus( self, event ):  
         transmit.allProjectors("PWR?")
         transmit.audio("PW?")   
@@ -111,13 +109,21 @@ class gui(maingui):
             
     def toggleFloor(self, event):
         if event.IsChecked():
-            event.GetEventObject().SetLabel("ON")
-            transmit.projector(9,  "PWR1")
-            transmit.projector(10, "PWR1")
+            event.GetEventObject().SetLabel("OPEN")
+            transmit.projector(1, "SHU0")
+            transmit.projector(2, "SHU0")
+            transmit.projector(7, "SHU0")
+            transmit.projector(8, "SHU0")
+            transmit.projector(9, "SHU0")
+            transmit.projector(10, "SHU0")
         else:
-            event.GetEventObject().SetLabel("OFF")
-            transmit.projector(9,  "PWR0")
-            transmit.projector(10, "PWR0")
+            event.GetEventObject().SetLabel("CLOSED")
+            transmit.projector(1, "SHU1")
+            transmit.projector(2, "SHU1")
+            transmit.projector(7, "SHU1")
+            transmit.projector(8, "SHU1")
+            transmit.projector(9, "SHU1")
+            transmit.projector(10, "SHU1")
 
     def toggleStereo(self, event):
         if event.IsChecked():
@@ -138,7 +144,8 @@ class gui(maingui):
     def updateVolume(self, event):
         volume = "MV" + str(event.GetEventObject().GetValue()).zfill(2)
         transmit.audio(volume)
-        
+    
+    #this def is only triggered by the timer made in init(), and no GUI event
     def autoShutdown(self, event):
         #is it 6pm?
         dt = datetime.now().strftime("%H%M")
@@ -148,10 +155,10 @@ class gui(maingui):
         #start another timer     
         self.shutdownTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.autoShutdownTimeout, self.shutdownTimer)
-        self.shutdownTimer.StartOnce(10000)  # 10 seconds        
+        self.shutdownTimer.StartOnce(15000)  # 15 seconds        
         
         #give a warning to the user
-        self.shutdownDlg = wx.GenericMessageDialog(self, "The projectors will be automatically shutdown in 10 seconds...",'Auto-Shutdown', wx.OK | wx.ICON_WARNING)
+        self.shutdownDlg = wx.GenericMessageDialog(self, "The projectors will be automatically shutdown in 15 seconds...",'Auto-Shutdown', wx.OK | wx.ICON_WARNING)
         self.shutdownDlg.SetOKLabel("Cancel Shutdown")
 
         result = self.shutdownDlg.ShowModal()  
@@ -159,19 +166,19 @@ class gui(maingui):
             
     def autoShutdownTimeout(self, event):
         if self.shutdownDlg:
-            self.shutdownDlg.EndModal(wx.ID_CANCEL)
-            self.c_ppower.SetLabel("OFF")
-            transmit.allProjectors("PWR0")
-            self.c_audio.SetLabel("OFF")
-            transmit.audio("PWSTANDBY")
+            self.shutdownDlg.EndModal(wx.ID_OK)
+        self.c_ppower.SetLabel("OFF")
+        transmit.allProjectors("PWR0")
+        self.c_audio.SetLabel("OFF")
+        transmit.audio("PWSTANDBY")
 
     #the threads call this when they're done
     def gridUpdate(self, id, message):
         self.grid.SetCellValue(row=id, col=0, s=message)
         
     def quit(self, event):
-        self.t.Stop()
-        transmit.tn.close()
+        self.t.Stop()           #the timer
+        transmit.tn.close()     #the audio connection
         wx.Exit()
         
 
